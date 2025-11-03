@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafeteria Simulation</title>
+    <style>
+        :root {
+            --color-white: rgba(255, 255, 255, 1);
+            --color-cream-50: rgba(252, 252, 249, 1);
+            --color-cream-100: rgba(255, 255, 253, 1);
+            --color-gray-300: rgba(167, 169, 169, 1);
+            --color-slate-500: rgba(98, 108, 113, 1);
+            --color-charcoal-700: rgba(31, 33, 33, 1);
+            --color-charcoal-800: rgba(38, 40, 40, 1);
+            --color-teal-300: rgba(50, 184, 198, 1);
+            --color-teal-500: rgba(33, 128, 141, 1);
+            --color-teal-600: rgba(29, 116, 128, 1);
+            --color-orange-400: rgba(230, 129, 97, 1);
+            --color-brown-600-rgb: 94, 82, 64;
+            --color-teal-500-rgb: 33, 128, 141;
+            --color-slate-900-rgb: 19, 52, 59;
+            
+            --color-background: var(--color-cream-50);
+            --color-surface: var(--color-cream-100);
+            --color-text: rgba(19, 52, 59, 1);
+            --color-primary: var(--color-teal-500);
+            --color-primary-hover: var(--color-teal-600);
+            --color-border: rgba(var(--color-brown-600-rgb), 0.2);
+            --color-card-border: rgba(var(--color-brown-600-rgb), 0.12);
+            
+            --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --space-8: 8px;
+            --space-12: 12px;
+            --space-16: 16px;
+            --space-24: 24px;
+            --radius-base: 8px;
+            --radius-lg: 12px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: var(--color-charcoal-700);
+                --color-surface: var(--color-charcoal-800);
+                --color-text: rgba(245, 245, 245, 1);
+                --color-primary: var(--color-teal-300);
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-card-border: rgba(119, 124, 124, 0.2);
+            }
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-family-base);
+            background: var(--color-background);
+            color: var(--color-text);
+            padding: var(--space-12);
+            line-height: 1.6;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: var(--space-16);
+            font-weight: 600;
+        }
+
+        .controls {
+            background: var(--color-surface);
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+            margin-bottom: var(--space-12);
+            display: flex;
+            gap: var(--space-8);
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 6px 14px;
+            border: none;
+            border-radius: var(--radius-base);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-primary-hover);
+        }
+
+        .btn-secondary {
+            background: rgba(var(--color-brown-600-rgb), 0.12);
+            color: var(--color-text);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(var(--color-brown-600-rgb), 0.2);
+        }
+
+        .speed-control {
+            display: flex;
+            align-items: center;
+            gap: var(--space-8);
+        }
+
+        .speed-control input {
+            width: 120px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: var(--space-12);
+            margin-bottom: var(--space-16);
+        }
+
+        .stat-card {
+            background: var(--color-surface);
+            padding: var(--space-8) var(--space-12);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--color-slate-500);
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--color-primary);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            gap: var(--space-12);
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .visualization {
+            background: var(--color-surface);
+            padding: var(--space-16);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flow-diagram {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--space-12);
+            margin-bottom: var(--space-16);
+        }
+
+        .stage {
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+            padding: var(--space-12);
+            background: rgba(var(--color-teal-500-rgb), 0.05);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-border);
+            min-height: 120px;
+        }
+
+        .stage-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--space-8);
+        }
+
+        .stage-label {
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .queue-box {
+            flex: 1;
+            background: var(--color-surface);
+            border: 2px dashed var(--color-border);
+            border-radius: var(--radius-base);
+            padding: var(--space-8);
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 28px);
+            gap: 4px;
+            overflow-y: auto;
+            max-height: 80px;
+        }
+
+        .customer-icon {
+            width: 28px;
+            height: 28px;
+            background: var(--color-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        .customer-icon.eating {
+            background: var(--color-orange-400);
+        }
+
+        .customer-icon.dessert {
+            background: #e879f9;
+        }
+
+        .server-status {
+            padding: 4px 8px;
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-base);
+            font-size: 0.7rem;
+            text-align: center;
+        }
+
+        .server-status.busy {
+            background: rgba(var(--color-teal-500-rgb), 0.15);
+            border-color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        .queue-count {
+            font-size: 0.7rem;
+            color: var(--color-slate-500);
+            font-weight: 500;
+        }
+
+        .flowchart-section {
+            background: var(--color-surface);
+            padding: var(--space-16);
+            border-radius: var(--radius-base);
+            border: 1px solid var(--color-card-border);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .flowchart {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-8);
+            align-items: center;
+            padding: var(--space-16);
+        }
+
+        .flow-node {
+            background: var(--color-surface);
+            border: 2px solid var(--color-primary);
+            border-radius: var(--radius-base);
+            padding: var(--space-12);
+            min-width: 200px;
+            text-align: center;
+            font-size: 0.85rem;
+            font-weight: 500;
+            position: relative;
+        }
+
+        .flow-node.active {
+            background: rgba(var(--color-teal-500-rgb), 0.15);
+            box-shadow: 0 0 0 3px rgba(var(--color-teal-500-rgb), 0.2);
+        }
+
+        .flow-arrow {
+            width: 2px;
+            height: 20px;
+            background: var(--color-primary);
+            position: relative;
+        }
+
+        .flow-arrow::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -3px;
+            width: 0;
+            height: 0;
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 8px solid var(--color-primary);
+        }
+
+        .flow-split {
+            display: flex;
+            gap: var(--space-16);
+            width: 100%;
+            justify-content: center;
+        }
+
+        .flow-split-arrow {
+            width: 100px;
+            height: 2px;
+            background: var(--color-primary);
+            position: relative;
+            margin: 10px 0;
+        }
+
+        .flow-split-arrow::after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: -3px;
+            width: 0;
+            height: 0;
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+            border-left: 8px solid var(--color-primary);
+        }
+
+        .flow-label {
+            font-size: 0.7rem;
+            color: var(--color-slate-500);
+            margin-top: 4px;
+        }
+
+        .time-info {
+            font-size: 0.65rem;
+            color: var(--color-orange-400);
+            font-weight: 600;
+            background: rgba(var(--color-teal-500-rgb), 0.1);
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 4px;
+            display: inline-block;
+        }
+
+        .log-section {
+            padding: var(--space-12);
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .log-entry {
+            font-size: 0.75rem;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--color-border);
+            font-family: monospace;
+        }
+
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+
+        .time-display {
+            color: var(--color-primary);
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .flowchart-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍽️ Cafeteria Simulation Dashboard</h1>
+
+        <div class="controls">
+            <button class="btn btn-primary" id="startBtn">Start Simulation</button>
+            <button class="btn btn-secondary" id="pauseBtn" disabled>Pause</button>
+            <button class="btn btn-secondary" id="resetBtn">Reset</button>
+            <div class="speed-control">
+                <label>Speed:</label>
+                <input type="range" id="speedSlider" min="1" max="100" value="50">
+                <span id="speedValue">50x</span>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Simulation Time</div>
+                <div class="stat-value" id="simTime">0:00</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Arrivals</div>
+                <div class="stat-value" id="totalArrivals">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Customers Left</div>
+                <div class="stat-value" id="customersLeft">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">In Cafeteria</div>
+                <div class="stat-value" id="inCafeteria">0</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="visualization">
+                <h2 style="margin-bottom: 12px; font-size: 1rem; font-weight: 600;">Queue Status</h2>
+                <div class="flow-diagram">
+                    <div class="stage">
+                        <div class="stage-header">
+                            <div class="stage-label">🥪 Sandwich Counter</div>
+                            <div class="server-status" id="sandwichServer">Free</div>
+                        </div>
+                        <div class="queue-box" id="sandwichQueue"></div>
+                        <div class="queue-count" id="sandwichCount">Queue: 0</div>
+                        <div class="time-info" id="sandwichTime"></div>
+                    </div>
+
+                    <div class="stage">
+                        <div class="stage-header">
+                            <div class="stage-label">🍲 Main Counter</div>
+                            <div class="server-status" id="mainServer">Free</div>
+                        </div>
+                        <div class="queue-box" id="mainQueue"></div>
+                        <div class="queue-count" id="mainCount">Queue: 0</div>
+                        <div class="time-info" id="mainTime"></div>
+                    </div>
+
+                    <div class="stage">
+                        <div class="stage-header">
+                            <div class="stage-label">💰 Cashier</div>
+                            <div class="server-status" id="cashierServer">Free</div>
+                        </div>
+                        <div class="queue-box" id="cashierQueue"></div>
+                        <div class="queue-count" id="cashierCount">Queue: 0</div>
+                        <div class="time-info" id="cashierTime"></div>
+                    </div>
+
+                    <div class="stage">
+                        <div class="stage-header">
+                            <div class="stage-label">🍽️ Eating Area</div>
+                        </div>
+                        <div class="queue-box" id="eatingArea"></div>
+                        <div class="queue-count" id="eatingCount">0 eating</div>
+                    </div>
+
+                    <div class="stage" style="grid-column: span 2;">
+                        <div class="stage-header">
+                            <div class="stage-label">🍰 Dessert Area</div>
+                        </div>
+                        <div class="queue-box" id="dessertArea"></div>
+                        <div class="queue-count" id="dessertCount">0 having dessert</div>
+                    </div>
+                </div>
+
+                <div class="log-section">
+                    <h3 style="margin-bottom: 8px; font-size: 0.9rem; font-weight: 600;">Event Log</h3>
+                    <div id="eventLog"></div>
+                </div>
+            </div>
+
+            <div class="flowchart-section">
+                <h2 style="margin-bottom: 12px; font-size: 1rem; font-weight: 600;">Process Flow</h2>
+                <div class="flowchart">
+                    <div class="flow-node" id="flow-arrival">
+                        👤 Customer Arrival
+                    </div>
+                    <div class="flow-arrow"></div>
+                    
+                    <div class="flow-node">
+                        🔀 Counter Selection
+                        <div class="flow-label">40% Sandwich | 60% Main</div>
+                    </div>
+                    
+                    <div class="flow-split">
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="flow-split-arrow"></div>
+                            <div class="flow-node" id="flow-sandwich">
+                                🥪 Sandwich<br>
+                                <span class="flow-label">60±30s</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; align-items: center;">
+                            <div class="flow-split-arrow"></div>
+                            <div class="flow-node" id="flow-main">
+                                🍲 Main Meal<br>
+                                <span class="flow-label">45±30s</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flow-arrow"></div>
+                    
+                    <div class="flow-node" id="flow-cashier">
+                        💰 Cashier
+                        <div class="flow-label">25±10s</div>
+                    </div>
+                    
+                    <div class="flow-arrow"></div>
+                    
+                    <div class="flow-node" id="flow-eating">
+                        🍽️ Eating
+                        <div class="flow-label">20±10 min</div>
+                    </div>
+                    
+                    <div class="flow-arrow"></div>
+                    
+                    <div class="flow-node">
+                        🍰 Dessert?
+                        <div class="flow-label">10% Yes | 90% No</div>
+                    </div>
+                    
+                    <div class="flow-arrow"></div>
+                    
+                    <div class="flow-node" id="flow-exit">
+                        🚪 Exit Cafeteria
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simulation state
+        let currentTime = 0;
+        let running = false;
+        let paused = false;
+        let speed = 50;
+        let animationId = null;
+        
+        let customers = {};
+        let totalArrivals = 0;
+        let customersLeft = 0;
+        
+        let sandwichQueue = [];
+        let mainQueue = [];
+        let cashierQueue = [];
+        let eatingCustomers = new Set();
+        let dessertCustomers = new Set();
+        
+        let sandwichBusy = false;
+        let mainBusy = false;
+        let cashierBusy = false;
+        
+        let sandwichCurrentTime = 0;
+        let mainCurrentTime = 0;
+        let cashierCurrentTime = 0;
+        let lastArrivalInterval = 0;
+        
+        let eventQueue = [];
+        
+        // Elements
+        const startBtn = document.getElementById('startBtn');
+        const pauseBtn = document.getElementById('pauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const speedSlider = document.getElementById('speedSlider');
+        const speedValue = document.getElementById('speedValue');
+        
+        // Event types
+        const ARRIVAL = 'arrival';
+        const SANDWICH_DONE = 'sandwich_done';
+        const MAIN_DONE = 'main_done';
+        const CASHIER_DONE = 'cashier_done';
+        const EATING_DONE = 'eating_done';
+        const DESSERT_DONE = 'dessert_done';
+        
+        // Triangular distribution
+        function triangular(mean, halfRange) {
+            const min = mean - halfRange;
+            const max = mean + halfRange;
+            const u = Math.random();
+            const F = (mean - min) / (max - min);
+            if (u < F) {
+                return min + Math.sqrt(u * (max - min) * (mean - min));
+            } else {
+                return max - Math.sqrt((1 - u) * (max - min) * (max - mean));
+            }
+        }
+        
+        // Schedule event
+        function scheduleEvent(time, type, customerId = null) {
+            eventQueue.push({ time, type, customerId });
+            eventQueue.sort((a, b) => a.time - b.time);
+        }
+        
+        // Log event
+        function logEvent(message) {
+            const log = document.getElementById('eventLog');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            const timeStr = formatTime(currentTime);
+            entry.innerHTML = `<span class="time-display">[${timeStr}]</span> ${message}`;
+            log.insertBefore(entry, log.firstChild);
+            
+            // Keep only last 50 entries
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+        
+        // Format time
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Update display
+        function updateDisplay() {
+            document.getElementById('simTime').textContent = formatTime(currentTime);
+            document.getElementById('totalArrivals').textContent = totalArrivals;
+            document.getElementById('customersLeft').textContent = customersLeft;
+            document.getElementById('inCafeteria').textContent = totalArrivals - customersLeft;
+            
+            // Update queues
+            updateQueue('sandwichQueue', sandwichQueue);
+            updateQueue('mainQueue', mainQueue);
+            updateQueue('cashierQueue', cashierQueue);
+            updateQueue('eatingArea', Array.from(eatingCustomers), 'eating');
+            updateQueue('dessertArea', Array.from(dessertCustomers), 'dessert');
+            
+            // Update servers
+            updateServer('sandwichServer', sandwichBusy);
+            updateServer('mainServer', mainBusy);
+            updateServer('cashierServer', cashierBusy);
+            
+            // Update counts
+            document.getElementById('sandwichCount').textContent = `Queue: ${sandwichQueue.length}`;
+            document.getElementById('mainCount').textContent = `Queue: ${mainQueue.length}`;
+            document.getElementById('cashierCount').textContent = `Queue: ${cashierQueue.length}`;
+            document.getElementById('eatingCount').textContent = `${eatingCustomers.size} eating`;
+            document.getElementById('dessertCount').textContent = `${dessertCustomers.size} having dessert`;
+            
+            // Update time displays
+            document.getElementById('sandwichTime').textContent = sandwichCurrentTime > 0 ? `Service: ${sandwichCurrentTime.toFixed(1)}s` : '';
+            document.getElementById('mainTime').textContent = mainCurrentTime > 0 ? `Service: ${mainCurrentTime.toFixed(1)}s` : '';
+            document.getElementById('cashierTime').textContent = cashierCurrentTime > 0 ? `Service: ${cashierCurrentTime.toFixed(1)}s` : '';
+            
+            // Update flowchart node highlights
+            updateFlowchart();
+        }
+        
+        function updateQueue(elementId, queue, className = '') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = '';
+            queue.forEach(custId => {
+                const icon = document.createElement('div');
+                icon.className = `customer-icon ${className}`;
+                icon.textContent = custId;
+                icon.title = `Customer #${custId}`;
+                element.appendChild(icon);
+            });
+        }
+        
+        function updateServer(elementId, busy) {
+            const element = document.getElementById(elementId);
+            if (busy) {
+                element.textContent = '🔴 Busy';
+                element.className = 'server-status busy';
+            } else {
+                element.textContent = '🟢 Free';
+                element.className = 'server-status';
+            }
+        }
+        
+        function updateFlowchart() {
+            // Reset all nodes
+            document.querySelectorAll('.flow-node').forEach(node => {
+                node.classList.remove('active');
+            });
+            
+            // Highlight active stages
+            if (sandwichBusy || sandwichQueue.length > 0) {
+                document.getElementById('flow-sandwich')?.classList.add('active');
+            }
+            if (mainBusy || mainQueue.length > 0) {
+                document.getElementById('flow-main')?.classList.add('active');
+            }
+            if (cashierBusy || cashierQueue.length > 0) {
+                document.getElementById('flow-cashier')?.classList.add('active');
+            }
+            if (eatingCustomers.size > 0) {
+                document.getElementById('flow-eating')?.classList.add('active');
+            }
+        }
+        
+        // Process event
+        function processEvent(event) {
+            const { time, type, customerId } = event;
+            
+            if (type === ARRIVAL) {
+                totalArrivals++;
+                const wantsDessert = Math.random() < 0.10;
+                customers[totalArrivals] = { 
+                    id: totalArrivals, 
+                    arrivalTime: time,
+                    wantsDessert 
+                };
+                
+                if (Math.random() < 0.40) {
+                    sandwichQueue.push(totalArrivals);
+                    logEvent(`Customer #${totalArrivals} arrived → Sandwich counter (wait: ${lastArrivalInterval.toFixed(1)}s after previous)`);
+                } else {
+                    mainQueue.push(totalArrivals);
+                    logEvent(`Customer #${totalArrivals} arrived → Main counter (wait: ${lastArrivalInterval.toFixed(1)}s after previous)`);
+                }
+                
+                // Schedule next arrival
+                lastArrivalInterval = triangular(30, 20);
+                const nextArrival = time + lastArrivalInterval;
+                scheduleEvent(nextArrival, ARRIVAL);
+            }
+            
+            // Process sandwich queue
+            if (sandwichQueue.length > 0 && !sandwichBusy) {
+                const custId = sandwichQueue.shift();
+                sandwichBusy = true;
+                sandwichCurrentTime = triangular(60, 30);
+                scheduleEvent(time + sandwichCurrentTime, SANDWICH_DONE, custId);
+                logEvent(`Customer #${custId} sandwich service started (will take ${sandwichCurrentTime.toFixed(1)}s)`);
+            }
+            
+            // Process main queue
+            if (mainQueue.length > 0 && !mainBusy) {
+                const custId = mainQueue.shift();
+                mainBusy = true;
+                mainCurrentTime = triangular(45, 30);
+                scheduleEvent(time + mainCurrentTime, MAIN_DONE, custId);
+                logEvent(`Customer #${custId} main meal service started (will take ${mainCurrentTime.toFixed(1)}s)`);
+            }
+            
+            if (type === SANDWICH_DONE) {
+                sandwichBusy = false;
+                sandwichCurrentTime = 0;
+                cashierQueue.push(customerId);
+                logEvent(`Customer #${customerId} sandwich ready → Cashier`);
+            }
+            
+            if (type === MAIN_DONE) {
+                mainBusy = false;
+                mainCurrentTime = 0;
+                cashierQueue.push(customerId);
+                logEvent(`Customer #${customerId} meal ready → Cashier`);
+            }
+            
+            // Process cashier queue
+            if (cashierQueue.length > 0 && !cashierBusy) {
+                const custId = cashierQueue.shift();
+                cashierBusy = true;
+                cashierCurrentTime = triangular(25, 10);
+                scheduleEvent(time + cashierCurrentTime, CASHIER_DONE, custId);
+                logEvent(`Customer #${custId} payment started (will take ${cashierCurrentTime.toFixed(1)}s)`);
+            }
+            
+            if (type === CASHIER_DONE) {
+                cashierBusy = false;
+                cashierCurrentTime = 0;
+                eatingCustomers.add(customerId);
+                const eatingTime = triangular(20 * 60, 10 * 60);
+                logEvent(`Customer #${customerId} paid → Eating (will take ${(eatingTime/60).toFixed(1)} min)`);
+                scheduleEvent(time + eatingTime, EATING_DONE, customerId);
+            }
+            
+            if (type === EATING_DONE) {
+                eatingCustomers.delete(customerId);
+                if (customers[customerId].wantsDessert) {
+                    dessertCustomers.add(customerId);
+                    const dessertTime = triangular(10 * 60, 2 * 60);
+                    logEvent(`Customer #${customerId} done eating → Dessert (will take ${(dessertTime/60).toFixed(1)} min)`);
+                    scheduleEvent(time + dessertTime, DESSERT_DONE, customerId);
+                } else {
+                    customersLeft++;
+                    logEvent(`Customer #${customerId} left cafeteria`);
+                }
+            }
+            
+            if (type === DESSERT_DONE) {
+                dessertCustomers.delete(customerId);
+                customersLeft++;
+                logEvent(`Customer #${customerId} finished dessert → Left`);
+            }
+        }
+        
+        // Simulation loop
+        function simulationStep() {
+            if (!running || paused || customersLeft >= 100) {
+                if (customersLeft >= 100) {
+                    running = false;
+                    logEvent('🎉 Simulation complete! 100 customers have left.');
+                    startBtn.disabled = false;
+                    pauseBtn.disabled = true;
+                }
+                return;
+            }
+            
+            if (eventQueue.length > 0 && eventQueue[0].time <= currentTime) {
+                const event = eventQueue.shift();
+                processEvent(event);
+            }
+            
+            currentTime += 0.1; // Small time step
+            updateDisplay();
+            
+            const delay = Math.max(1, 100 - speed);
+            animationId = setTimeout(simulationStep, delay);
+        }
+        
+        // Controls
+        startBtn.addEventListener('click', () => {
+            if (!running) {
+                running = true;
+                paused = false;
+                if (totalArrivals === 0) {
+                    scheduleEvent(0, ARRIVAL);
+                }
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                logEvent('▶️ Simulation started');
+                simulationStep();
+            }
+        });
+        
+        pauseBtn.addEventListener('click', () => {
+            paused = !paused;
+            pauseBtn.textContent = paused ? 'Resume' : 'Pause';
+            if (!paused) {
+                logEvent('▶️ Simulation resumed');
+                simulationStep();
+            } else {
+                logEvent('⏸️ Simulation paused');
+            }
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            running = false;
+            paused = false;
+            currentTime = 0;
+            totalArrivals = 0;
+            customersLeft = 0;
+            customers = {};
+            sandwichQueue = [];
+            mainQueue = [];
+            cashierQueue = [];
+            eatingCustomers = new Set();
+            dessertCustomers = new Set();
+            sandwichBusy = false;
+            mainBusy = false;
+            cashierBusy = false;
+            sandwichCurrentTime = 0;
+            mainCurrentTime = 0;
+            cashierCurrentTime = 0;
+            lastArrivalInterval = 0;
+            eventQueue = [];
+            
+            if (animationId) clearTimeout(animationId);
+            
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            pauseBtn.textContent = 'Pause';
+            
+            document.getElementById('eventLog').innerHTML = '';
+            updateDisplay();
+            logEvent('🔄 Simulation reset');
+        });
+        
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            speedValue.textContent = `${speed}x`;
+        });
+        
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
